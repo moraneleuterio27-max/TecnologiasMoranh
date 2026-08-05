@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Planilla de Docentes</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f4f4;
+            margin: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px gray;
+        }
+
+        h1 {
+            text-align: center;
+            color: #0066cc;
+        }
+
+        input {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+        }
+
+        button {
+            padding: 10px 15px;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            color: white;
+        }
+
+        .calcular {
+            background: green;
+        }
+
+        .guardar {
+            background: blue;
+        }
+
+        .modificar {
+            background: orange;
+        }
+
+        .eliminar {
+            background: red;
+        }
+
+        .reporte {
+            background: purple;
+        }
+
+        .salir {
+            background: black;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        table,
+        th,
+        td {
+            border: 1px solid #ccc;
+        }
+
+        th {
+            background: #0066cc;
+            color: white;
+        }
+
+        th,
+        td {
+            padding: 8px;
+            text-align: center;
+        }
+    </style>
+
+</head>
+
+<body>
+
+    <div class="container">
+
+        <h1>PLANILLA DE DOCENTES</h1>
+
+        <label>Código</label>
+        <input type="text" id="codigo">
+
+        <label>Nombre del Docente</label>
+        <input type="text" id="nombre">
+
+        <label>Sueldo Base</label>
+        <input type="number" id="sueldo">
+
+        <label>Horas Extras</label>
+        <input type="number" id="horas" value="0">
+
+        <label>Valor Hora Extra</label>
+        <input type="number" id="valorhora" value="0">
+
+        <label>IHSS (2.5%)</label>
+        <input type="number" id="ihss" readonly>
+
+        <label>RAP (1.5%)</label>
+        <input type="number" id="rap" readonly>
+
+        <label>ISR</label>
+        <input type="number" id="isr" readonly>
+
+        <label>Total Deducciones</label>
+        <input type="number" id="deducciones" readonly>
+
+        <label>Sueldo Neto</label>
+        <input type="number" id="neto" readonly>
+
+        <br><br>
+        <center>
+            <button class="calcular" onclick="calcular()">Calcular</button>
+            <button class="guardar" onclick="guardar()">Guardar</button>
+            <button class="modificar" onclick="modificar()">Modificar</button>
+            <button class="eliminar" onclick="eliminarRegistro()">Eliminar</button>
+            <button class="reporte" onclick="window.print()">Reporte</button>
+            <button class="salir" onclick="salir()">Salir</button>
+        </center>
+        <table>
+            <thead>
+                <tr>
+                    <th>Código</th>
+                    <th>Nombre</th>
+                    <th>Sueldo Base</th>
+                    <th>Deducciones</th>
+                    <th>Sueldo Neto</th>
+                </tr>
+            </thead>
+
+            <tbody id="tabla"></tbody>
+
+        </table>
+
+    </div>
+
+    <script>
+
+        mostrarDatos();
+
+        function calcular() {
+
+            let sueldo = parseFloat(document.getElementById("sueldo").value) || 0;
+            let horas = parseFloat(document.getElementById("horas").value) || 0;
+            let valorhora = parseFloat(document.getElementById("valorhora").value) || 0;
+
+            let extras = horas * valorhora;
+            let total = sueldo + extras;
+
+            let ihss = total * 0.025;
+            let rap = total * 0.015;
+
+            let isr = 0;
+
+            if (total > 25000) {
+                isr = total * 0.10;
+            }
+
+            let ded = ihss + rap + isr;
+            let neto = total - ded;
+
+            document.getElementById("ihss").value = ihss.toFixed(2);
+            document.getElementById("rap").value = rap.toFixed(2);
+            document.getElementById("isr").value = isr.toFixed(2);
+            document.getElementById("deducciones").value = ded.toFixed(2);
+            document.getElementById("neto").value = neto.toFixed(2);
+        }
+
+        function guardar() {
+
+            let datos = JSON.parse(localStorage.getItem("docentes")) || [];
+
+            let docente = {
+                codigo: document.getElementById("codigo").value,
+                nombre: document.getElementById("nombre").value,
+                sueldo: document.getElementById("sueldo").value,
+                deducciones: document.getElementById("deducciones").value,
+                neto: document.getElementById("neto").value
+            };
+
+            datos.push(docente);
+
+            localStorage.setItem("docentes", JSON.stringify(datos));
+
+            mostrarDatos();
+
+            alert("Registro Guardado");
+        }
+
+        function mostrarDatos() {
+
+            let datos = JSON.parse(localStorage.getItem("docentes")) || [];
+
+            let tabla = document.getElementById("tabla");
+
+            tabla.innerHTML = "";
+
+            datos.forEach((d) => {
+
+                tabla.innerHTML += `
+<tr>
+<td>${d.codigo}</td>
+<td>${d.nombre}</td>
+<td>L. ${d.sueldo}</td>
+<td>L. ${d.deducciones}</td>
+<td>L. ${d.neto}</td>
+</tr>
+`;
+
+            });
+        }
+
+        function modificar() {
+
+            let codigo = document.getElementById("codigo").value;
+
+            let datos = JSON.parse(localStorage.getItem("docentes")) || [];
+
+            datos = datos.map(d => {
+
+                if (d.codigo === codigo) {
+
+                    d.nombre = document.getElementById("nombre").value;
+                    d.sueldo = document.getElementById("sueldo").value;
+                    d.deducciones = document.getElementById("deducciones").value;
+                    d.neto = document.getElementById("neto").value;
+                }
+
+                return d;
+            });
+
+            localStorage.setItem("docentes", JSON.stringify(datos));
+
+            mostrarDatos();
+
+            alert("Registro Modificado");
+        }
+
+        function eliminarRegistro() {
+
+            let codigo = document.getElementById("codigo").value;
+
+            let datos = JSON.parse(localStorage.getItem("docentes")) || [];
+
+            datos = datos.filter(d => d.codigo !== codigo);
+
+            localStorage.setItem("docentes", JSON.stringify(datos));
+
+            mostrarDatos();
+
+            alert("Registro Eliminado");
+        }
+
+        function salir() {
+
+            if (confirm("¿Desea salir del sistema?")) {
+                window.close();
+            }
+
+        }
+
+    </script>
+
+</body>
+
+</html>

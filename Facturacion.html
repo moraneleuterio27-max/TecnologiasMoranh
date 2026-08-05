@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Facturación</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #88d9db;
+            margin: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px gray;
+        }
+
+        h1 {
+            text-align: center;
+            color: navy;
+        }
+
+        input,
+        button {
+            padding: 10px;
+            margin: 5px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        table,
+        th,
+        td {
+            border: 1px solid #ccc;
+        }
+
+        th {
+            background: navy;
+            color: white;
+        }
+
+        th,
+        td {
+            padding: 10px;
+            text-align: center;
+        }
+
+        .resumen {
+            margin-top: 20px;
+            font-size: 18px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+
+        <h1>FACTURACIÓN HTML5</h1>
+
+        <input type="text" id="producto" placeholder="Producto">
+        <input type="number" id="precio" placeholder="Precio">
+        <input type="number" id="cantidad" placeholder="Cantidad">
+
+        <button onclick="agregarProducto()">Agregar</button>
+
+        <table id="tabla">
+            <thead>
+                <tr>
+                    <th>Producto</th>
+                    <th>Precio</th>
+                    <th>Cantidad</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+
+        <div class="resumen">
+
+            <label>Descuento (%)</label>
+            <input type="number" id="descuento" value="0">
+
+            <label>Impuesto ISV (%)</label>
+            <input type="number" id="impuesto" value="15">
+
+            <br><br>
+
+            <button onclick="calcular()">Calcular Factura</button>
+
+            <h3 id="subtotal">Subtotal: L.0.00</h3>
+            <h3 id="desc">Descuento: L.0.00</h3>
+            <h3 id="imp">Impuesto: L.0.00</h3>
+            <h2 id="total">Total: L.0.00</h2>
+
+            <button onclick="guardarFactura()">
+                Guardar Factura
+            </button>
+
+            <button onclick="verFacturas()">
+                Ver Facturas Guardadas
+            </button>
+
+        </div>
+
+        <div id="resultado"></div>
+
+    </div>
+
+    <script>
+
+        let productos = [];
+
+        function agregarProducto() {
+
+            let producto = document.getElementById("producto").value;
+            let precio = parseFloat(document.getElementById("precio").value);
+            let cantidad = parseInt(document.getElementById("cantidad").value);
+
+            if (producto == "" || isNaN(precio) || isNaN(cantidad)) {
+                alert("Complete los datos");
+                return;
+            }
+
+            let total = precio * cantidad;
+
+            productos.push({
+                producto,
+                precio,
+                cantidad,
+                total
+            });
+
+            mostrarTabla();
+
+            document.getElementById("producto").value = "";
+            document.getElementById("precio").value = "";
+            document.getElementById("cantidad").value = "";
+        }
+
+        function mostrarTabla() {
+
+            let tbody = document.querySelector("#tabla tbody");
+            tbody.innerHTML = "";
+
+            productos.forEach(p => {
+
+                tbody.innerHTML += `
+<tr>
+<td>${p.producto}</td>
+<td>${p.precio.toFixed(2)}</td>
+<td>${p.cantidad}</td>
+<td>${p.total.toFixed(2)}</td>
+</tr>`;
+            });
+
+        }
+
+        function calcular() {
+
+            let subtotal = 0;
+
+            productos.forEach(p => {
+                subtotal += p.total;
+            });
+
+            let descuentoPorcentaje =
+                parseFloat(document.getElementById("descuento").value);
+
+            let impuestoPorcentaje =
+                parseFloat(document.getElementById("impuesto").value);
+
+            let descuento =
+                subtotal * (descuentoPorcentaje / 100);
+
+            let base = subtotal - descuento;
+
+            let impuesto =
+                base * (impuestoPorcentaje / 100);
+
+            let totalFinal =
+                base + impuesto;
+
+            document.getElementById("subtotal").innerHTML =
+                "Subtotal: L." + subtotal.toFixed(2);
+
+            document.getElementById("desc").innerHTML =
+                "Descuento: L." + descuento.toFixed(2);
+
+            document.getElementById("imp").innerHTML =
+                "Impuesto: L." + impuesto.toFixed(2);
+
+            document.getElementById("total").innerHTML =
+                "Total: L." + totalFinal.toFixed(2);
+
+            return {
+                subtotal,
+                descuento,
+                impuesto,
+                totalFinal
+            };
+        }
+
+        function guardarFactura() {
+
+            let datos = calcular();
+
+            let facturas =
+                JSON.parse(localStorage.getItem("facturas")) || [];
+
+            facturas.push({
+                fecha: new Date().toLocaleString(),
+                productos,
+                subtotal: datos.subtotal,
+                descuento: datos.descuento,
+                impuesto: datos.impuesto,
+                total: datos.totalFinal
+            });
+
+            localStorage.setItem(
+                "facturas",
+                JSON.stringify(facturas)
+            );
+
+            alert("Factura guardada correctamente");
+        }
+
+        function verFacturas() {
+
+            let facturas =
+                JSON.parse(localStorage.getItem("facturas")) || [];
+
+            let html = "<h2>Facturas Guardadas</h2>";
+
+            facturas.forEach((f, i) => {
+
+                html += `
+<hr>
+<h3>Factura ${i + 1}</h3>
+<p>Fecha: ${f.fecha}</p>
+<p>Total: L.${f.total.toFixed(2)}</p>
+`;
+            });
+
+            document.getElementById("resultado").innerHTML = html;
+        }
+
+    </script>
+
+</body>
+
+</html>
